@@ -3,3 +3,4 @@
 *.sbx
 *.sbn
 *.rda
+.Rhistory
