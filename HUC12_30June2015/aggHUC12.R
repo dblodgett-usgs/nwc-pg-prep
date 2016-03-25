@@ -1,11 +1,10 @@
 library(maptools)
-library(snow)
 library(HUCAgg)
 library(rgeos)
 library(rgdal)
 
 # Set this to where the files are.
-workingPath<-'HUC12_30June2015Agg'
+workingPath<-'/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/HUC12_30June2015/HUC12_30June2015Agg'
 
 setwd(workingPath)
 
@@ -37,7 +36,7 @@ aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
 # huc<-"070700051802" #Wisconsin River
 # huc<-"020402040000" #Delaware River
 # huc<-"150301070105" #Colorado River
-# 
+#
 # outHuc<-unionHUC(huc,aggrHUCs,hucPoly)
 # outShp<-subset(hucPoly,hucPoly@data$HUC %in% huc)
 # outShp@polygons[which(outShp@data$HUC %in% huc)][[1]]<-outHuc@polygons[[1]]
@@ -47,10 +46,10 @@ aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
 
 ## HUC02 03 and 06 ##
 
-# hucList<-c()
+# testhucList<-c()
 # for(huc in hucPoly@data$HUC) {
 #   if(grepl('^0707.*',huc)) {
-#     hucList<-c(hucList,huc)
+#     testhucList<-c(testhucList,huc)
 #   }
 # }
 
@@ -69,15 +68,15 @@ aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
 ## Run whole country ##
 
 # cl <- makeCluster(rep('localhost',2), type = "SOCK")
-# 
+#
 # range<-seq(from = 1, to = length(hucPoly@data$HUC), by=1000)
 # ranges<-array(dim=c(length(range),2))
 # ranges[,1]<-seq(from = 1, to = length(hucPoly@data$HUC), by=1000)
 # ranges[,2]=seq(from = 1, to = length(hucPoly@data$HUC), by=1000)+1000
 # ranges[nrow(ranges),2]=length(hucPoly@data$HUC)
-# 
+#
 # out<-parApply(cl, ranges, 1, natRunner, aggrHUCs=aggrHUCs, hucPoly=hucPoly, unionHUC=unionHUC, outPath=workingPath)
-# 
+#
 # stopCluster(cl)
 
 ## Run whole country ##
@@ -115,13 +114,13 @@ for ( setSize in 1:max(upstream_size) ) {
 hucPoly@data$UPHUCS<-paste(unlist(aggrHUCs[as.character(hucPoly@data$HUC12)]),collapse=',')
 
 # ## Walk Down the Network
-# 
+#
 # range<-seq(from = 1, to = length(hucPoly@data$HUC), by=1000)
 # ranges<-array(dim=c(length(range),2))
 # ranges[,1]<-seq(from = 1, to = length(hucPoly@data$HUC), by=1000)
 # ranges[,2]=seq(from = 1, to = length(hucPoly@data$HUC), by=1000)+1000
 # ranges[nrow(ranges),2]=length(hucPoly@data$HUC)
-#   
+#
 # write_shape<-function(range,hucPoly) {
 #   subPoly<-subset(hucPoly,hucPoly@data$HUC %in% as.character(hucPoly@data$HUC[range[1]:range[2]]))
 #   for (p in 1:length(subPoly@polygons)) {
@@ -143,7 +142,7 @@ hucPoly@data$UPHUCS<-paste(unlist(aggrHUCs[as.character(hucPoly@data$HUC12)]),co
 #   }
 #   writePolyShape(subPoly,file.path('./',toString(range[1])))
 # }
-# 
+#
 # apply(ranges,1,write_shape,hucPoly)
 
 writeOGR(obj = hucPoly, dsn = 'huc12agg.pgdump', layer = 'huc12agg', driver = 'PGDump', layer_options = c("GEOMETRY_NAME=the_geom"))
