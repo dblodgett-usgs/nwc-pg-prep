@@ -8,33 +8,39 @@ workingPath<-'databaseShapefiles/HUC12_30June2015/HUC12_30June2015Agg/'
 
 setwd(workingPath)
 
-regions<-list(newEngland=c('01'), midAtlantic=c('02'), southAtlanticGolf=c('03'),
-              greatLakes=c('04'),  mississippi=c('05','06','07','10','11','08'),
-              sourisRedRainy=c('09'), texasGolf=c('12'), rioGrande=c('13'),
-              colorado=c('14','15'), greatBasin=c('16'), pacificNorthwest=c('17'),
-              california=c('18'), alaska=c('19'), hawaii=c('20'))
-
-# If the regional data hasn't been created yet, initialize it.
-if(!dir.exists('regions')) { # should put this in a function.
-  hucPoly<-readShapePoly("../data/WBDHU12.shp",proj4string= CRS('+init=epsg:4269'))
-  i <- sapply(hucPoly@data, is.factor); hucPoly@data[i] <- lapply(hucPoly@data[i], as.character)
-  dir.create('regions')
-  for(region in names(regions)) {
-    print(regions[region])
-    subhucList<-c()
-    for(huc02 in regions[region][[1]]) { 
-      for(huc in hucPoly@data$HUC) {
-        if(grepl(paste0('^',huc02,'.*'),huc)) { 
-          subhucList<-c(subhucList,huc) 
-        }
-      } 
+init_regions<-function(WBDPath,regionsPath) {
+  regions<-list(newEngland=c('01'), midAtlantic=c('02'), southAtlanticGolf=c('03'),
+                greatLakes=c('04'),  mississippi=c('05','06','07','10','11','08'),
+                sourisRedRainy=c('09'), texasGolf=c('12'), rioGrande=c('13'),
+                colorado=c('14','15'), greatBasin=c('16'), 
+                pacificNorthwest=c('1701','1702','1703','1704','1705','1706',
+                                   '1707','1709','1710','1711','1712','1708'),
+                california=c('18'), alaska=c('1901','1902','1903','1904','1905','1906'), hawaii=c('20'))
+  if(!dir.exists(regionsPath)) {
+    hucPoly<-readShapePoly(WBDPath,proj4string= CRS('+init=epsg:4269'))
+    i <- sapply(hucPoly@data, is.factor); hucPoly@data[i] <- lapply(hucPoly@data[i], as.character)
+    dir.create(regionsPath)
+    for(region in names(regions)) {
+      print(regions[region])
+      subhucList<-c()
+      for(huc02 in regions[region][[1]]) { 
+        for(huc in hucPoly@data$HUC) {
+          if(grepl(paste0('^',huc02,'.*'),huc)) { 
+            subhucList<-c(subhucList,huc) 
+          }
+        } 
+      }
+      subhucPoly<-subset(hucPoly,hucPoly@data$HUC %in% as.character(subhucList))
+      save(subhucPoly, file=file.path('regions',paste0(region,'.rda')))
     }
-    subhucPoly<-subset(hucPoly,hucPoly@data$HUC %in% as.character(subhucList))
-    save(subhucPoly, file=file.path('regions',paste0(region,'.rda')))
-    rm(subhucPoly)
-  } 
-  rm(hucPoly) 
+  }
+  return(regions)
 }
+
+WBDPath<-"../data/WBDHU12.shp"
+regionsPath<-"regions"
+
+regions<-init_regions(WBDPath, regionsPath)
 
 for(region in names(regions[1:length(names(regions))])) {
   print(region)
@@ -42,7 +48,7 @@ for(region in names(regions[1:length(names(regions))])) {
   for(subRegion in regions[region][[1]]) { # Mysterious errors occur when the scale is above a region at a time.
     print(paste('aggregating hucs for',subRegion))
     hucList<-c()
-    for(huc in subhucPoly@data$HUC) {
+    for(huc in subhucPoly@data$HUC12) {
       if(grepl(paste0('^',subRegion,'.*'),huc)) {
         hucList<-c(hucList,huc)
       }
