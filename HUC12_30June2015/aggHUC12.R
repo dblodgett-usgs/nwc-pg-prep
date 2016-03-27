@@ -4,7 +4,7 @@ library(rgeos)
 library(rgdal)
 
 # Set this to where the files are.
-workingPath<-'/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/HUC12_30June2015/HUC12_30June2015Agg'
+workingPath<-'HUC12_30June2015/HUC12_30June2015Agg'
 
 setwd(workingPath)
 
