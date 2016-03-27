@@ -15,7 +15,7 @@ init_regions<-function(WBDPath,regionsPath) {
                 colorado=c('14','15'), greatBasin=c('16'), 
                 pacificNorthwest=c('1701','1702','1703','1704','1705','1706',
                                    '1707','1709','1710','1711','1712','1708'),
-                california=c('18'), alaska=c('1901','1902','1903','1904','1905','1906'), hawaii=c('20'))
+                california=c('18'))
   if(!dir.exists(regionsPath)) {
     hucPoly<-readShapePoly(WBDPath,proj4string= CRS('+init=epsg:4269'))
     i <- sapply(hucPoly@data, is.factor); hucPoly@data[i] <- lapply(hucPoly@data[i], as.character)
