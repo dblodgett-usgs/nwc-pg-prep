@@ -37,6 +37,58 @@ init_regions<-function(WBDPath,regionsPath) {
   return(regions)
 }
 
+unionHUCSet<-function(aggrHUCs,fromHUCs,subhucPoly) {
+  upstream_size<-sapply(aggrHUCs, length)
+  for ( setSize in 1:max(upstream_size)) {
+    hucs<-names(upstream_size[which(upstream_size==setSize)])
+    for ( huc in hucs ) {
+      fromHUCs<-c(unlist(fromHUC[huc][[1]]),huc)
+      if(length(fromHUCs)>50) {print(paste(huc,'has',length(fromHUCs),'contributing hucs'))}
+      for (ihuc in 2:length(fromHUCs)) { # I found that it is much faster to combine two iteratively rather than a ton in one block.
+        hucListSub<-c(fromHUCs[ihuc-1],fromHUCs[ihuc])
+        subhucPolySub<-subset(subhucPoly,subhucPoly@data$HUC12 %in% hucListSub)
+        subhucPolySub@data$group<-1
+        ind<-which(subhucPoly@data$HUC12 %in% huc)
+        tryCatch(
+          subhucPoly@polygons[ind][[1]]<-unionSpatialPolygons(subhucPolySub,subhucPolySub@data$group)@polygons[[1]],
+          warning = function(w) {print(paste("Warning handling", huc, "warning was", w))},
+          error = function(e) {print(paste("Error handling", huc, "error was", e))})
+      }
+      subhucPoly@polygons[ind][[1]]@ID<-huc
+      subhucPoly@data$AREAACRES[ind]<-sum(subhucPolySub@data$AREAACRES)
+      subhucPoly@data$AREASQKM[ind]<-sum(subhucPolySub@data$AREASQKM)
+    }
+  }
+  return(subhucPoly)
+}
+
+getHUCList<-function(subRegion,subhucPoly) {
+  hucList<-c()
+  for(huc in subhucPoly@data$HUC12) {
+    if(grepl(paste0('^',subRegion,'.*'),huc)) {
+      hucList<-c(hucList,huc)
+    }
+  }
+  return(hucList)
+}
+
+simplifyHucs<-function(subhucPoly,coordThresh=50000,simpTol=0.00005) {
+  for (p in 1:length(subhucPoly@polygons)) {
+    numCoords<-0
+    for (p2 in 1:length(subhucPoly@polygons[[p]]@Polygons)) {
+      numCoords<-numCoords+length(subhucPoly@polygons[[p]]@Polygons[[p2]]@coords)
+    }
+    if (numCoords>coordThresh) {
+      subhucPolySub<-subset(subhucPoly,subhucPoly@data$HUC %in% as.character(subhucPoly@data$HUC[p]))
+      tryCatch(
+        subhucPoly@polygons[[p]]<-gSimplify(subhucPolySub,simpTol,topologyPreserve=TRUE)@polygons[[1]],
+        warning = function(w) {print(paste("Warning simplifying", huc, "warning was", w))},
+        error = function(e) {print(paste("Error simplifying", huc, "error was", e))})
+    }
+  }
+  return(subhucPoly)
+}
+
 WBDPath<-"../data/WBDHU12.shp"
 regionsPath<-"regions"
 
@@ -47,49 +99,12 @@ for(region in names(regions[1:length(names(regions))])) {
   load(file.path('regions',paste0(region,'.rda')))
   for(subRegion in regions[region][[1]]) { # Mysterious errors occur when the scale is above a region at a time.
     print(paste('aggregating hucs for',subRegion))
-    hucList<-c()
-    for(huc in subhucPoly@data$HUC12) {
-      if(grepl(paste0('^',subRegion,'.*'),huc)) {
-        hucList<-c(hucList,huc)
-      }
-    }
+    hucList<-getHUCList(subRegion,subhucPoly)
     fromHUC<-sapply(as.character(unlist(hucList)),fromHUC_finder,hucs=subhucPoly@data$HUC12,tohucs=subhucPoly@data$TOHUC)
     aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
-    upstream_size<-sapply(aggrHUCs, length)
-    for ( setSize in 1:max(upstream_size)) {
-      hucs<-names(upstream_size[which(upstream_size==setSize)])
-      for ( huc in hucs ) {
-        fromHUCs<-c(unlist(fromHUC[huc][[1]]),huc)
-        if(length(fromHUCs)>50) {print(paste(huc,'has',length(fromHUCs),'contributing hucs'))}
-        for (ihuc in 2:length(fromHUCs)) { # I found that it is much faster to combine two iteratively rather than a ton in one block.
-          hucListSub<-c(fromHUCs[ihuc-1],fromHUCs[ihuc])
-          subhucPolySub<-subset(subhucPoly,subhucPoly@data$HUC12 %in% hucListSub)
-          subhucPolySub@data$group<-1
-          ind<-which(subhucPoly@data$HUC12 %in% huc)
-          tryCatch(
-            subhucPoly@polygons[ind][[1]]<-unionSpatialPolygons(subhucPolySub,subhucPolySub@data$group)@polygons[[1]],
-            warning = function(w) {print(paste("Warning handling", huc, "warning was", w))},
-            error = function(e) {print(paste("Error handling", huc, "error was", e))})
-        }
-        subhucPoly@polygons[ind][[1]]@ID<-huc
-        subhucPoly@data$AREAACRES[ind]<-sum(subhucPolySub@data$AREAACRES)
-        subhucPoly@data$AREASQKM[ind]<-sum(subhucPolySub@data$AREASQKM)
-      }
-    }
+    subhucPoly<-unionHUCSet(aggrHUCs, fromHUCs, subhucPoly)
     print('simplifying hucs')
-    for (p in 1:length(subhucPoly@polygons)) {
-      numCoords<-0
-      for (p2 in 1:length(subhucPoly@polygons[[p]]@Polygons)) {
-        numCoords<-numCoords+length(subhucPoly@polygons[[p]]@Polygons[[p2]]@coords)
-      }
-      if (numCoords>50000) {
-        subhucPolySub<-subset(subhucPoly,subhucPoly@data$HUC %in% as.character(subhucPoly@data$HUC[p]))
-        tryCatch(
-          subhucPoly@polygons[[p]]<-gSimplify(subhucPolySub,0.00005,topologyPreserve=TRUE)@polygons[[1]],
-          warning = function(w) {print(paste("Warning simplifying", huc, "warning was", w))},
-          error = function(e) {print(paste("Error simplifying", huc, "error was", e))})
-      }
-    }
+    subhucPoly<-simplifyHucs(subhucPoly)
   }
   subhucPoly@data$UPHUCS<-paste(unlist(aggrHUCs[as.character(subhucPoly@data$HUC12)]),collapse=',')
   print('writing output')
