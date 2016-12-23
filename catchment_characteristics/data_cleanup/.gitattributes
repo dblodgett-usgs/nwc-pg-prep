@@ -1,0 +1,5 @@
+dataList.json filter=lfs diff=lfs merge=lfs -text
+metadata.json filter=lfs diff=lfs merge=lfs -text
+metadata_table.csv filter=lfs diff=lfs merge=lfs -text
+postedvar_list.txt filter=lfs diff=lfs merge=lfs -text
+postedvar_list.xlsm filter=lfs diff=lfs merge=lfs -text

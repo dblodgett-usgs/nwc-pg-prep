@@ -7,3 +7,4 @@
 *.docx filter=lfs diff=lfs merge=lfs -text
 HUC12_30June2015/aggrHUCs.json filter=lfs diff=lfs merge=lfs -text
 HUC12_30June2015/fromHUC.json filter=lfs diff=lfs merge=lfs -text
+*.rds filter=lfs diff=lfs merge=lfs -text
