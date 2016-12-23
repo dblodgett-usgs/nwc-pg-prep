@@ -12,9 +12,9 @@ if [ -n "$check" ]; then
     exit
 fi
 
-pg_dump -t charametadata postgresql://$username:$password@localhost/nldi -O --file="charametadata.pgdump"
-pg_dump -t acc_charadata postgresql://$username:$password@localhost/nldi -O --file="acc_charadata.pgdump"
-pg_dump -t tot_charadata postgresql://$username:$password@localhost/nldi -O --file="tot_charadata.pgdump"
-pg_dump -t cat_charadata postgresql://$username:$password@localhost/nldi -O --file="cat_charadata.pgdump"
+pg_dump -t characteristic_data.characteristic_metadata postgresql://$username:$password@localhost/nldi -O --file="characteristic_data.characteristic_metadata.pgdump"
+pg_dump -t characteristic_data.divergence_routed_characteristics postgresql://$username:$password@localhost/nldi -O --file="characteristic_data.divergence_routed_characteristics.pgdump"
+pg_dump -t characteristic_data.total_accumulated_characteristics postgresql://$username:$password@localhost/nldi -O --file="characteristic_data.total_accumulated_characteristics.pgdump"
+pg_dump -t characteristic_data.local_catchment_characteristics postgresql://$username:$password@localhost/nldi -O --file="characteristic_data.local_catchment_characteristics.pgdump"
 
 for file in *.pgdump; do gzip $file; done;
