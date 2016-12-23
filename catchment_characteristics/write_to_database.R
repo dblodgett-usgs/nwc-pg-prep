@@ -44,6 +44,12 @@ varsForTesting <- c("_N97", "P97", "PEST219",# chemical
                     "POPDENS00", "POPDENS10", "TOTAL_ROAD_DENS", # Population Infrastructure
                     "ECOL3_3", "ECOL3_15", "ECOL3_27", "ECOL3_69", #regions
                     "PERMAVE", "WTDEP", "BASIN_SLOPE", "BASIN_AREA", "STREAM_SLOPE") # soils
+
+varsForTesting <- c("_N97",# chemical
+                    "ET", 
+                    "POPDENS00", # Population Infrastructure
+                    "ECOL3_3", #regions
+                    "PERMAVE") # soils
 varsForTestingregex <- paste(varsForTesting,collapse = "$|_")
 
 metadataCols<-c()
