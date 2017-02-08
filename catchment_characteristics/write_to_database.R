@@ -75,14 +75,13 @@ for(dataType in 1:3) {
     url <- unique(metadata$dataset_url)[urlID]
     rdsFile<-paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension)
     varsFromURL<-metadata$characteristic_id[which(metadata$dataset_url == url)]
-    # print(varsFromURL)
-    # print(any(grepl(varsForTestingregex,varsFromURL)))
     if(any(grepl(varsForTestingregex,varsFromURL))) {
       varData<-readRDS(rdsFile)
-      if(length(names(varData))>1 && any(grepl("NODATA", names(varData)))) {
+      if(length(names(varData))>1) {
         for(column in 2:length(names(varData))) {
           colName <- names(varData)[column]
           if(!grepl("NODATA", colName) && grepl(varsForTestingregex, colName)) {
+            if(!grepl("NODATA", colName)) {
             print(metadata$dataset_label[min(which(metadata$dataset_url %in% url))])
             print(colName)
             dataTable <- data.frame(varData$COMID)
@@ -91,16 +90,19 @@ for(dataType in 1:3) {
               metadata$characteristic_id[which(metadata$characteristic_id %in% names(varData)[column][[1]])]
             metadataCols <- 
               c(metadataCols, which(metadata$characteristic_id %in% names(varData)[column][[1]]))
-            print(metadataCols)
             dataTable["val"] <- varData[column]
             dataTable["val"][dataTable["val"] == -9999] <- NA
-            dataTable["nodatap"] <- as.integer(varData[which(grepl("NODATA", names(varData)))][[1]])
+            if(any(grepl("NODATA", names(varData)))) {
+              dataTable["nodatap"] <- as.integer(varData[which(grepl("NODATA", names(varData)))][[1]])
+            } else {
+              dataTable["nodatap"] <- 0
+            }
             dataTable["nodatap"][dataTable["nodatap"] == 200080] <- 100 # some nodata values were way big.
             dbWriteTable(con, c("characteristic_data",table),
                          value = dataTable, row.names = FALSE, append = TRUE)
           }
         }
-
+        }
       } else {
         print("Didn't find data for this dataset.")
       }
