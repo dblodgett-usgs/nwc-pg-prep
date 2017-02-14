@@ -1,0 +1,143 @@
+library(jsonlite)
+library(dplyr)
+library(RPostgreSQL)
+library(parallel)
+library(snow)
+
+setwd("/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/catchment_characteristics/")
+
+metadata<-fromJSON("data_cleanup//metadata.json")
+names(metadata) <- c("characteristic_id", "characteristic_description", "units", "dataset_label",
+                     "dataset_url", "theme_label", "theme_url", "characteristic_type")
+
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv, dbname = "nldi",
+                 host = "localhost", port = 5432,
+                 user = "dblodgett")
+
+df_postgres <- dbGetQuery(con, 'DROP TABLE characteristic_data.characteristic_metadata;')
+df_postgres <- dbGetQuery(con, 'CREATE TABLE characteristic_data.characteristic_metadata
+(
+characteristic_id text NOT NULL,
+characteristic_description text,
+units text,
+dataset_label text,
+dataset_url text,
+theme_label text,
+theme_url text,
+characteristic_type text,
+CONSTRAINT characteristic_metadata_pkey PRIMARY KEY (characteristic_id)
+)
+WITH (
+  OIDS=TRUE
+);
+ALTER TABLE characteristic_data.characteristic_metadata
+OWNER TO nldi;')
+
+datasets<-list()
+extensions<-c("_acc.rds", "_tot.rds", "_cat.rds")
+tables<-c("divergence_routed_characteristics", 
+          "total_accumulated_characteristics", 
+          "local_catchment_characteristics")
+
+metadataCols<-c()
+
+for(dataType in 1:3) {
+  
+  table<-tables[dataType]
+  extension<-extensions[dataType]
+  dbGetQuery(con, paste0('DROP TABLE characteristic_data.',table, ';'))
+  dbGetQuery(con, paste0('CREATE TABLE characteristic_data.',table, '
+                       (
+                          comid integer NOT NULL,
+                          characteristic_id text NOT NULL,
+                          characteristic_value numeric,
+                          percent_nodata smallint,
+                          CONSTRAINT ', table, '_pkey PRIMARY KEY (comid, characteristic_id)
+                       )
+                       WITH (
+                           OIDS=TRUE
+                       );
+                       ALTER TABLE characteristic_data.', table,
+                         ' OWNER TO nldi;'))
+  
+  rdsFiles <- list()
+  i<-1
+  
+  for(urlID in 1:length(unique(metadata$dataset_url))) {
+    url <- unique(metadata$dataset_url)[urlID]
+    rdsFile<-paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension)
+    varsFromURL<-metadata$characteristic_id[which(metadata$dataset_url == url)]
+    varData<-readRDS(rdsFile)
+    if(length(names(varData))>1) {
+      for(column in 2:length(names(varData))) {
+        colName <- names(varData)[column]
+        if(!grepl("NODATA", colName)) {
+          if(!grepl("NODATA", colName)) {
+            print(metadata$dataset_label[min(which(metadata$dataset_url %in% url))])
+            print(colName)
+            metadataCols <- 
+              c(metadataCols, which(metadata$characteristic_id %in% names(varData)[column][[1]]))
+            rdsFiles[[i]] <- list(rdsFile=rdsFile,column=column)
+            i<-i+1
+          }
+        }
+      }
+    } else {
+      print("Didn't find data for this dataset.")
+    }
+  }
+}
+
+metadata <- metadata[metadataCols, ]
+
+dbWriteTable(con, c("characteristic_data","characteristic_metadata"),
+             value = metadata, row.names = FALSE, append = TRUE)
+
+dbDisconnect(con)
+
+par_write_pg<-function(rdsList, metadata, table){
+  library(jsonlite)
+  library(dplyr)
+  library(RPostgreSQL)
+  drv <- dbDriver("PostgreSQL")
+  con <- dbConnect(drv, dbname = "nldi",
+                   host = "localhost", port = 5432,
+                   user = "dblodgett")
+  setwd("/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/catchment_characteristics/")
+  
+  rdsFile <- rdsList[["rdsFile"]]
+  column <- rdsList[["column"]]
+  
+  varData<-readRDS(rdsFile)
+  
+  dataTable <- data.frame(varData$COMID)
+  
+  names(dataTable) <-c("comid")
+  
+  dataTable["characteristic_id"] <- 
+    metadata$characteristic_id[which(metadata$characteristic_id %in% names(varData)[column][[1]])]
+  
+  dataTable["val"] <- varData[column]
+  
+  dataTable["val"][dataTable["val"] == -9999] <- NA
+  
+  if(any(grepl("NODATA", names(varData)))) {
+    dataTable["nodatap"] <- as.integer(varData[which(grepl("NODATA", names(varData)))][[1]])
+  } else {
+    dataTable["nodatap"] <- 0
+  }
+  
+  dataTable["nodatap"][dataTable["nodatap"] > 100] <- 100 # some nodata values were way big.
+  
+  dbWriteTable(con, c("characteristic_data",table),
+               value = dataTable, row.names = FALSE, append = TRUE)
+  dbDisconnect(con)
+}
+
+cl <- makeCluster(rep('localhost',7), type = "SOCK")
+
+out <- parLapply(cl, rdsFiles, par_write_pg, metadata=metadata, table=table)
+
+stopCluster(cl)
+
