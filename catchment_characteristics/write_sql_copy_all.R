@@ -45,15 +45,6 @@ for(dataType in 1:3) {
     rdsFile <- paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension,".rds")
     
     varsFromURL <- metadata$characteristic_id[which(metadata$dataset_url == url)]
-    
-    outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, ".pgdump")
-    
-    if(!file.exists(paste0(outFile,".gz"))) {
-      
-      cat(header_sql, file = outFile)
-      
-      cat(paste0("COPY ", table, " (comid, characteristic_id, characteristic_value, percent_nodata) FROM stdin;\r\n"),
-          file = outFile, append = TRUE)
       
       varData <- readRDS(rdsFile)
       
@@ -63,6 +54,15 @@ for(dataType in 1:3) {
           colName <- names(varData)[column]
           
           if(!grepl("NODATA", colName)) {
+            
+            outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
+            
+            if(!file.exists(paste0(outFile,".gz"))) {
+            
+            cat(header_sql, file = outFile)
+            
+            cat(paste0("COPY ", table, " (comid, characteristic_id, characteristic_value, percent_nodata) FROM stdin;\r\n"),
+                file = outFile, append = TRUE)
             
             print(paste("Step ", step, "of", total_steps))
             
@@ -95,15 +95,17 @@ for(dataType in 1:3) {
             
             fwrite(dataTable, file = outFile, append = TRUE, sep = "\t", col.names = FALSE, na = '\\N', eol = "\r\n")
             
+            cat(paste0("\\.\r\n"),
+                file = outFile, append = TRUE)
+            
+            system(paste0("gzip ", outFile)) 
+          }
           }
         }
       } else {
         print("Didn't find data for this dataset.")
       }
-      cat(paste0("\\.\r\n"),
-          file = outFile, append = TRUE)
-      system(paste0("gzip ", outFile)) 
-    }
+
     step <- step + 1
   }
 }
@@ -119,4 +121,5 @@ fwrite(metadata, file = metadata_outfile, append = TRUE, sep = "\t", col.names =
 
 cat(paste0("\\.\r\n"),
     file = metadata_outfile, append = TRUE)
+
 system(paste0("gzip ", metadata_outfile)) 
