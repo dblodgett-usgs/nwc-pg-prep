@@ -38,44 +38,47 @@ DROP TABLE characteristic_data.total_accumulated_characteristics;
 
 DROP TABLE characteristic_data.local_catchment_characteristics;
 
-CREATE TABLE characteristic_data.divergence_routed_characteristics
+CREATE UNLOGGED TABLE characteristic_data.divergence_routed_characteristics
 (
 comid integer NOT NULL,
 characteristic_id text NOT NULL,
 characteristic_value numeric,
-percent_nodata smallint,
-CONSTRAINT divergence_routed_characteristics_pkey PRIMARY KEY (comid, characteristic_id)
-)
-WITH (
-OIDS=TRUE
+percent_nodata smallint
 );
+
+CREATE UNLOGGED TABLE characteristic_data.total_accumulated_characteristics
+(
+comid integer NOT NULL,
+characteristic_id text NOT NULL,
+characteristic_value numeric,
+percent_nodata smallint
+);
+
+CREATE UNLOGGED TABLE characteristic_data.local_catchment_characteristics
+(
+comid integer NOT NULL,
+characteristic_id text NOT NULL,
+characteristic_value numeric,
+percent_nodata smallint
+);
+
 ALTER TABLE characteristic_data.divergence_routed_characteristics
 OWNER TO nldi;
 
-CREATE TABLE characteristic_data.total_accumulated_characteristics
-(
-comid integer NOT NULL,
-characteristic_id text NOT NULL,
-characteristic_value numeric,
-percent_nodata smallint,
-CONSTRAINT total_accumulated_characteristics_pkey PRIMARY KEY (comid, characteristic_id)
-)
-WITH (
-OIDS=TRUE
-);
-ALTER TABLE characteristic_data.total_accumulated_characteristics 
+ALTER TABLE characteristic_data.total_accumulated_characteristics
 OWNER TO nldi;
 
-CREATE TABLE characteristic_data.local_catchment_characteristics
-(
-comid integer NOT NULL,
-characteristic_id text NOT NULL,
-characteristic_value numeric,
-percent_nodata smallint,
-CONSTRAINT local_catchment_characteristics_pkey PRIMARY KEY (comid, characteristic_id)
-)
-WITH (
-OIDS=TRUE
-);
 ALTER TABLE characteristic_data.local_catchment_characteristics
 OWNER TO nldi;
+
+-- ALTER TABLE characteristic_data.divergence_routed_characteristics
+-- OWNER TO nldi,
+-- ADD CONSTRAINT divergence_routed_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
+--
+-- ALTER TABLE characteristic_data.total_accumulated_characteristics
+-- OWNER TO nldi,
+-- ADD CONSTRAINT total_accumulated_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
+--
+-- ALTER TABLE characteristic_data.local_catchment_characteristics
+-- OWNER TO nldi,
+-- ADD CONSTRAINT local_catchment_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
