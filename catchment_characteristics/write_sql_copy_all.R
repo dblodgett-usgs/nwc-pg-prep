@@ -45,19 +45,19 @@ for(dataType in 1:3) {
     rdsFile <- paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension,".rds")
     
     varsFromURL <- metadata$characteristic_id[which(metadata$dataset_url == url)]
-      
-      varData <- readRDS(rdsFile)
-      
-      if(length(names(varData))>1) {
-        for(column in 2:length(names(varData))) {
+    
+    varData <- readRDS(rdsFile)
+    
+    if(length(names(varData))>1) {
+      for(column in 2:length(names(varData))) {
+        
+        colName <- names(varData)[column]
+        
+        if(!grepl("NODATA", colName)) {
           
-          colName <- names(varData)[column]
+          outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
           
-          if(!grepl("NODATA", colName)) {
-            
-            outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
-            
-            if(!file.exists(paste0(outFile,".gz"))) {
+          if(!file.exists(paste0(outFile,".gz"))) {
             
             cat(header_sql, file = outFile)
             
@@ -100,12 +100,12 @@ for(dataType in 1:3) {
             
             system(paste0("gzip ", outFile)) 
           }
-          }
         }
-      } else {
-        print("Didn't find data for this dataset.")
       }
-
+    } else {
+      print("Didn't find data for this dataset.")
+    }
+    
     step <- step + 1
   }
 }
