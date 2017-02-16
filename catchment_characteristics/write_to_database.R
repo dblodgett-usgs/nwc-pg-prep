@@ -1,7 +1,8 @@
 library(jsonlite)
 library(dplyr)
 library(RPostgreSQL)
-setwd("/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/catchment_characteristics/")
+# Assumes working directory has data_cleanup and dump_files directories.
+# This was used to populate tables for development. The approach does not scale well and was abandoned.
 
 metadata<-fromJSON("data_cleanup//metadata.json")
 names(metadata) <- c("characteristic_id", "characteristic_description", "units", "dataset_label",

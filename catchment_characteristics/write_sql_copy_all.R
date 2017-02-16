@@ -2,7 +2,7 @@ library(jsonlite)
 library(dplyr)
 library(RPostgreSQL)
 library(data.table)
-setwd("/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/catchment_characteristics/")
+# Assumes working directory has data_cleanup and dump_files directories.
 
 metadata<-fromJSON("data_cleanup/metadata.json")
 
@@ -19,12 +19,11 @@ tables<-c("divergence_routed_characteristics",
           "total_accumulated_characteristics", 
           "local_catchment_characteristics")
 
+# These were just pulled from a standard pg_dump output file naively.
 header_sql <- "SET statement_timeout = 0;\r\nSET lock_timeout = 0;\r\nSET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';\r\nSET standard_conforming_strings = on;\r\nSET check_function_bodies = false;
 SET client_min_messages = warning;\r\nSET row_security = off;\r\nSET search_path = characteristic_data, pg_catalog;
 SET default_tablespace = '';\r\nSET default_with_oids = true;\r\n\r\n"
-
-# varsForTestingregex <- paste(varsForTesting,collapse = "$|_")
 
 metadataCols<-c()
 
