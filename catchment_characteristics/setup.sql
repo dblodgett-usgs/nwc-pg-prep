@@ -38,7 +38,7 @@ DROP TABLE characteristic_data.total_accumulated_characteristics;
 
 DROP TABLE characteristic_data.local_catchment_characteristics;
 
-CREATE UNLOGGED TABLE characteristic_data.divergence_routed_characteristics
+CREATE TABLE characteristic_data.divergence_routed_characteristics
 (
 comid integer NOT NULL,
 characteristic_id text NOT NULL,
@@ -46,7 +46,7 @@ characteristic_value numeric,
 percent_nodata smallint
 );
 
-CREATE UNLOGGED TABLE characteristic_data.total_accumulated_characteristics
+CREATE TABLE characteristic_data.total_accumulated_characteristics
 (
 comid integer NOT NULL,
 characteristic_id text NOT NULL,
@@ -54,7 +54,7 @@ characteristic_value numeric,
 percent_nodata smallint
 );
 
-CREATE UNLOGGED TABLE characteristic_data.local_catchment_characteristics
+CREATE TABLE characteristic_data.local_catchment_characteristics
 (
 comid integer NOT NULL,
 characteristic_id text NOT NULL,
