@@ -19,6 +19,27 @@ tables<-c("divergence_routed_characteristics",
           "total_accumulated_characteristics", 
           "local_catchment_characteristics")
 
+not_add <- c("Hunt Geology", # removes 45 categories
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1930", # removes four per entry (# of major dams, # of all dams, maximum storage, and normal storage)
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1940",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1950",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1960",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1970",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 1990",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 2000",
+             "National Inventory of Dams (NID) Storage of Dams Built Before 2010",
+             "Cropland Data Layer (CDL) 2012", # removes a LOT of categories.
+             "National Land Cover Database 2011 50 Meter Riparian Buffer",
+             "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 2002", # removes a ton of categories.  
+             "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 1974",
+             "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 2012",
+             "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 1982",
+             "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 1992",
+             "TIGER Road Density 2013",
+             "Level III Eco Regions", # removes a ton of catagories
+             "Hydrologic Land Regions",
+             "Physiographic Characteristics") 
+
 # These were just pulled from a standard pg_dump output file naively.
 header_sql <- "SET statement_timeout = 0;\r\nSET lock_timeout = 0;\r\nSET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';\r\nSET standard_conforming_strings = on;\r\nSET check_function_bodies = false;
@@ -38,6 +59,8 @@ for(dataType in 1:3) {
   extension<-extensions[dataType]
   
   for(urlID in 1:length(unique(metadata$dataset_url))) {
+    
+    if(!metadata$datasetLabel[urlID] %in% not_add) {
     
     url <- unique(metadata$dataset_url)[urlID]
     
@@ -106,6 +129,7 @@ for(dataType in 1:3) {
     }
     
     step <- step + 1
+    }
   }
 }
 
