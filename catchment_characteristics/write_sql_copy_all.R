@@ -40,7 +40,7 @@ not_add <- c("Hunt Geology", # removes 45 categories
 
 partial_category_groups <- c("Cropland Data Layer (CDL) 2012")
 partial_categories <- c("CAT_CDL12_111",
-                    "CAT_CDL12_112")
+                        "CAT_CDL12_112")
 
 # These were just pulled from a standard pg_dump output file naively.
 header_sql <- "SET statement_timeout = 0;\r\nSET lock_timeout = 0;\r\nSET idle_in_transaction_session_timeout = 0;
@@ -61,9 +61,9 @@ for(dataType in 1:3) {
   extension<-extensions[dataType]
   
   for(urlID in 1:length(unique(metadata$dataset_url))) {
-      
+    
     url <- unique(metadata$dataset_url)[urlID]
-      
+    
     if(!unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% not_add) {
       
       rdsFile <- paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension,".rds")
@@ -78,56 +78,56 @@ for(dataType in 1:3) {
           colName <- names(varData)[column]
           if(!unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% partial_category_groups ||
              unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% partial_category_groups && colName %in% partial_categories) {
-          if(!grepl("NODATA", colName)) {
-            
-            outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
-            
-            print(outFile)
-            
-            if(!file.exists(paste0(outFile,".gz"))) {
+            if(!grepl("NODATA", colName)) {
               
-              cat(header_sql, file = outFile)
+              outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
               
-              cat(paste0("COPY ", table, " (comid, characteristic_id, characteristic_value, percent_nodata) FROM stdin;\r\n"),
-                  file = outFile, append = TRUE)
+              print(outFile)
               
-              print(paste("Step ", step, "of", total_steps))
-              
-              dataTable <- data.frame(varData$COMID)
-              
-              names(dataTable) <-c("comid")
-              
-              dataTable["characteristic_id"] <- 
-                metadata$characteristic_id[which(metadata$characteristic_id %in% names(varData)[column][[1]])]
-              
-              metadataCols <- 
-                c(metadataCols, which(metadata$characteristic_id %in% names(varData)[column][[1]]))
-              
-              dataTable["val"] <- subset(varData,select = names(varData)[column])
-              
-              dataTable["val"][dataTable["val"] == -9999] <- NA
-              
-              if(any(grepl("NODATA", names(varData)))) {
+              if(!file.exists(paste0(outFile,".gz"))) {
                 
-                dataTable["nodatap"] <- as.integer(subset(varData, 
-                                                          select = names(varData)[which(grepl("NODATA", names(varData)))])[[1]])
+                cat(header_sql, file = outFile)
                 
-              } else {
+                cat(paste0("COPY ", table, " (comid, characteristic_id, characteristic_value, percent_nodata) FROM stdin;\r\n"),
+                    file = outFile, append = TRUE)
                 
-                dataTable["nodatap"] <- 0
+                print(paste("Step ", step, "of", total_steps))
                 
+                dataTable <- data.frame(varData$COMID)
+                
+                names(dataTable) <-c("comid")
+                
+                dataTable["characteristic_id"] <- 
+                  metadata$characteristic_id[which(metadata$characteristic_id %in% names(varData)[column][[1]])]
+                
+                metadataCols <- 
+                  c(metadataCols, which(metadata$characteristic_id %in% names(varData)[column][[1]]))
+                
+                dataTable["val"] <- subset(varData,select = names(varData)[column])
+                
+                dataTable["val"][dataTable["val"] == -9999] <- NA
+                
+                if(any(grepl("NODATA", names(varData)))) {
+                  
+                  dataTable["nodatap"] <- as.integer(subset(varData, 
+                                                            select = names(varData)[which(grepl("NODATA", names(varData)))])[[1]])
+                  
+                } else {
+                  
+                  dataTable["nodatap"] <- 0
+                  
+                }
+                
+                dataTable["nodatap"][dataTable["nodatap"] > 100] <- 100 # some nodata values were way big.
+                
+                fwrite(dataTable, file = outFile, append = TRUE, sep = "\t", col.names = FALSE, na = '\\N', eol = "\r\n")
+                
+                cat(paste0("\\.\r\n"),
+                    file = outFile, append = TRUE)
+                
+                system(paste0("gzip ", outFile)) 
               }
-              
-              dataTable["nodatap"][dataTable["nodatap"] > 100] <- 100 # some nodata values were way big.
-              
-              fwrite(dataTable, file = outFile, append = TRUE, sep = "\t", col.names = FALSE, na = '\\N', eol = "\r\n")
-              
-              cat(paste0("\\.\r\n"),
-                  file = outFile, append = TRUE)
-              
-              system(paste0("gzip ", outFile)) 
             }
-          }
           }
         }
       } else {
