@@ -20,16 +20,14 @@ tables<-c("divergence_routed_characteristics",
           "local_catchment_characteristics")
 
 not_add <- c("Hunt Geology", # removes 45 categories
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1930", # removes four per entry (# of major dams, # of all dams, maximum storage, and normal storage)
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1940",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1950",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1960",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1970",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 1990",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 2000",
-             "National Inventory of Dams (NID) Storage of Dams Built Before 2010",
              "Cropland Data Layer (CDL) 2012", # removes a LOT of categories.
              "National Land Cover Database 2011 50 Meter Riparian Buffer",
+             "Water balance model output 2000-2014, McCabe and Wolock",
+             "Water Balance Model for 2000-2014 from McCabe and Wolock de-trended to 2012",
+             "Water balance model output 2000-2014, McCabe and Wolock",
+             "Anning and Ator Lithology",
+             "Average Annual Runoff from McCabe and Wolock's Runoff Model 1951-2000",
+             "Average Monthly Runoff from McCabe and Wolock's Runoff Model 1951-2000",
              "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 2002", # removes a ton of categories.  
              "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 1974",
              "National Wall-to-Wall Anthropogenic Land Use Trends (NWALT) 2012",
@@ -39,6 +37,10 @@ not_add <- c("Hunt Geology", # removes 45 categories
              "Level III Eco Regions", # removes a ton of catagories
              "Hydrologic Land Regions",
              "Physiographic Characteristics") 
+
+partial_category_groups <- c("Cropland Data Layer (CDL) 2012")
+partial_categories <- c("CAT_CDL12_111",
+                    "CAT_CDL12_112")
 
 # These were just pulled from a standard pg_dump output file naively.
 header_sql <- "SET statement_timeout = 0;\r\nSET lock_timeout = 0;\r\nSET idle_in_transaction_session_timeout = 0;
@@ -59,10 +61,10 @@ for(dataType in 1:3) {
   extension<-extensions[dataType]
   
   for(urlID in 1:length(unique(metadata$dataset_url))) {
-    
-    if(!metadata$datasetLabel[urlID] %in% not_add) {
       
-      url <- unique(metadata$dataset_url)[urlID]
+    url <- unique(metadata$dataset_url)[urlID]
+      
+    if(!unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% not_add) {
       
       rdsFile <- paste0("data_cleanup/rds/broken_out/",strsplit(url,split = "/")[[1]][6],extension,".rds")
       
@@ -74,10 +76,13 @@ for(dataType in 1:3) {
         for(column in 2:length(names(varData))) {
           
           colName <- names(varData)[column]
-          
+          if(!unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% partial_category_groups ||
+             unique(metadata$dataset_label[which(metadata$dataset_url == url)]) %in% partial_category_groups && colName %in% partial_categories) {
           if(!grepl("NODATA", colName)) {
             
             outFile <- paste0("dump_files/",table, "_", strsplit(url,split = "/")[[1]][6],extension, "_", colName, ".pgdump")
+            
+            print(outFile)
             
             if(!file.exists(paste0(outFile,".gz"))) {
               
@@ -122,6 +127,7 @@ for(dataType in 1:3) {
               
               system(paste0("gzip ", outFile)) 
             }
+          }
           }
         }
       } else {
