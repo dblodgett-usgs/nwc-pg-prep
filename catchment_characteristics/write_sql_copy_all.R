@@ -21,7 +21,6 @@ tables<-c("divergence_routed_characteristics",
 
 not_add <- c("Hunt Geology", # removes 45 categories
              "Cropland Data Layer (CDL) 2012", # removes a LOT of categories.
-             "National Land Cover Database 2011 50 Meter Riparian Buffer",
              "Water balance model output 2000-2014, McCabe and Wolock",
              "Water Balance Model for 2000-2014 from McCabe and Wolock de-trended to 2012",
              "Water balance model output 2000-2014, McCabe and Wolock",
