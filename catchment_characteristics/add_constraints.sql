@@ -1,0 +1,8 @@
+ALTER TABLE characteristic_data.divergence_routed_characteristics
+ADD CONSTRAINT divergence_routed_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
+
+ALTER TABLE characteristic_data.total_accumulated_characteristics
+ADD CONSTRAINT total_accumulated_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
+
+ALTER TABLE characteristic_data.local_catchment_characteristics
+ADD CONSTRAINT local_catchment_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
