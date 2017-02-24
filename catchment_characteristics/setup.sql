@@ -30,7 +30,9 @@ WITH (
   OIDS=TRUE
 );
 ALTER TABLE characteristic_data.characteristic_metadata
-OWNER TO nldi;
+OWNER TO nldi_data;
+
+GRANT SELECT ON TABLE characteristic_data.characteristic_metadata TO nldi_user;
 
 DROP TABLE characteristic_data.divergence_routed_characteristics;
 
@@ -63,22 +65,18 @@ percent_nodata smallint
 );
 
 ALTER TABLE characteristic_data.divergence_routed_characteristics
-OWNER TO nldi;
+OWNER TO nldi_data;
+
+GRANT SELECT ON TABLE characteristic_data.divergence_routed_characteristics TO nldi_user;
 
 ALTER TABLE characteristic_data.total_accumulated_characteristics
-OWNER TO nldi;
+OWNER TO nldi_data;
+
+GRANT SELECT ON TABLE characteristic_data.total_accumulated_characteristics TO nldi_user;
 
 ALTER TABLE characteristic_data.local_catchment_characteristics
-OWNER TO nldi;
+OWNER TO nldi_data;
 
--- ALTER TABLE characteristic_data.divergence_routed_characteristics
--- OWNER TO nldi,
--- ADD CONSTRAINT divergence_routed_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
---
--- ALTER TABLE characteristic_data.total_accumulated_characteristics
--- OWNER TO nldi,
--- ADD CONSTRAINT total_accumulated_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
---
--- ALTER TABLE characteristic_data.local_catchment_characteristics
--- OWNER TO nldi,
--- ADD CONSTRAINT local_catchment_characteristics_pkey PRIMARY KEY (comid, characteristic_id);
+GRANT SELECT ON TABLE characteristic_data.local_catchment_characteristics TO nldi_user;
+
+
