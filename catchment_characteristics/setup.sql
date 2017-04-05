@@ -24,7 +24,7 @@ dataset_url text,
 theme_label text,
 theme_url text,
 characteristic_type text,
-CONSTRAINT characteristic_metadata_pkey PRIMARY KEY (characteristic_id)
+CONSTRAINT characteristic_metadata_pk PRIMARY KEY (characteristic_id)
 )
 WITH (
   OIDS=TRUE
