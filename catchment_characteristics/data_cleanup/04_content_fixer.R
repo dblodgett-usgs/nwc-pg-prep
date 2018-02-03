@@ -7,12 +7,12 @@ library("jsonlite")
 library("tidyr")
 library("stringr")
 library("data.table")
-setwd('~/temp')
+setwd('~/Documents/Projects/WaterSmart/5_data/databaseShapefiles/catchment_characteristics/data_cleanup/')
 f<-file('dataList.json')
 dataList<-fromJSON(readLines(f))
 close(f)
 rm(f)
-setwd('~/temp/rds/')
+setwd('./rds/')
 metadata_table<-data.frame(ID=character(0), description=character(0),
                            units=character(0), datasetLabel=character(0),
                            datasteURL=character(0), themeLabel=character(0),
@@ -124,4 +124,5 @@ for(rdsFile in list.files(pattern = '*.rds')) {
   }
 }
 
-write.csv(metadata_table, "metadata_table.csv")
+write.csv(metadata_table, "../metadata_table.csv")
+jsonlite::write_json(metadata_table, "../metadata.json")
