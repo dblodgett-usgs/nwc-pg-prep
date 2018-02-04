@@ -12,3 +12,7 @@ Every effort has been made to automate creation of .pgdump files using the scrip
 
 This repository contains source data and assumes access to a locally running PostGres database and 
 an R environment with packages to support the national\_runner.R script.
+
+Git LFS is required to clone this repository properly. Once cloned, you will also need ogr2ogr and
+postgres with the psql command line tool. A Mac OS environment was used with the postgres.app and
+the brew version of ogr2ogr.
