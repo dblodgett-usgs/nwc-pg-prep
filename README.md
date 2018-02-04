@@ -7,3 +7,8 @@ the U.S. Geological Survey nor the U.S. Government shall be held liable for any 
 from the authorized or unauthorized use of this information.**
 
 These data feed a geoserver infrastructure available here: https://cida.usgs.gov/nwc/geoserver/web/
+
+Every effort has been made to automate creation of .pgdump files using the scrip ogr2ogr\_local.sh  
+
+This repository contains source data and assumes access to a locally running PostGres database and 
+an R environment with packages to support the national\_runner.R script.
