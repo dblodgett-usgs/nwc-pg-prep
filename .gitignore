@@ -7,3 +7,4 @@
 .Rapp*
 catchment_characteristics/data_cleanup/zip
 catchment_characteristics/data_cleanup/rds/broken_out
+dumps
