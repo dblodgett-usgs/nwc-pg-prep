@@ -5,11 +5,11 @@
   # This script works with data from: https://www.epa.gov/waterdata/nhdplus-national-data
   
   # Set this to where the files are.
-  workingPath<-'/Users/dblodgett/Documents/Projects/WaterSmart/5_data/databaseShapefiles/HUC12_NHDPlus/NHDPlusNationalData/'
+  workingPath<-'/Users/dblodgett/Documents/Projects/WaterSmart/5_data/nwc-pg-prep/HUC12_NHDPlus/NHDPlusNationalData/'
   
   setwd(workingPath)
   
-  WBDPath<-"../NHDPlusV21_National_Seamless.gdb"
+  WBDPath<-"./NHDPlusV21_National_Seamless.gdb"
   regionsPath<-"regions"
   
   # Found a few HUCs that feed to themselves. These are where they should go.
@@ -19,10 +19,18 @@
                          HU_12_DS_f = c("101800100702", "060101051404", "160300020306", 
                                         "170401050306", "101800110902", "101800120603", 
                                         "100200070307", "060101051303"), stringsAsFactors = F)
-  new_TOHUC <- readr::read_csv("/Users/dblodgett/Documents/Projects/WaterSmart/4_code/nldi_gf/outputs/updated_HU_12_DS.csv") %>%
+  new_TOHUC <- readr::read_csv("updated_HU_12_DS.csv") %>%
     rename(HUC12 = HUC_12, new_TOHUC = HU_12_DS)
   
   regions<-init_regions(WBDPath, regionsPath)
+  
+  hucPoly <- sf::st_read(WBDPath, layer = "HUC12") %>%
+    sf::st_set_geometry(NULL) %>%
+    select(huc12 = HUC_12, areasqkm = AreaHUC12)
+  
+  write.csv(hucPoly, "hucArea.csv", row.names = FALSE)
+  
+  rm(hucPoly)
   
   options(expressions=50000)
   
@@ -79,6 +87,8 @@
     out <- bind_rows(out, subhucPoly@data[c("HUC12", "AREASQKM")])
   }
   sink()
+  hucArea <- dplyr::rename(hucArea, huc12 = HUC12, areasqkm = AREASQKM)
+  write.csv(hucPoly, "hucagg_area.csv", row.names = FALSE)
   saveRDS(out, "huc_da.rds")
   saveRDS(aggrHUCs_out, "aggrHUCs.rds")
   
