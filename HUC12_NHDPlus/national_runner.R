@@ -21,16 +21,28 @@
                                         "100200070307", "060101051303"), stringsAsFactors = F)
   new_TOHUC <- readr::read_csv("updated_HU_12_DS.csv") %>%
     rename(HUC12 = HUC_12, new_TOHUC = HU_12_DS)
-  
-  regions<-init_regions(WBDPath, regionsPath)
-  
+  # Pull in the whole dataset and save some stuff for downstream scripts.
   hucPoly <- sf::st_read(WBDPath, layer = "HUC12") %>%
-    sf::st_set_geometry(NULL) %>%
+    sf::st_set_geometry(NULL) 
+  
+  hucArea <- hucPoly %>%
     select(huc12 = HUC_12, areasqkm = AreaHUC12)
   
-  write.csv(hucPoly, "hucArea.csv", row.names = FALSE)
+  write.csv(hucArea, "hucArea.csv", row.names = FALSE)
   
+  hucPoly <- hucPoly %>% left_join(hu_fixes, by = "HUC_12") %>%
+    mutate(HU_12_DS = ifelse(is.na(HU_12_DS_f), HU_12_DS, HU_12_DS_f)) %>%
+    select(-HU_12_DS_f) %>%
+    left_join(new_TOHUC, by = c("HUC_12" = "HUC12")) %>%
+    mutate(HU_12_DS = ifelse(is.na(new_TOHUC), HU_12_DS, new_TOHUC)) %>%
+    select(-new_TOHUC)
+  
+  fromHUC<-sapply(hucPoly$HUC_12,fromHUC_finder,hucs=hucPoly$HUC_12,tohucs=hucPoly$HU_12_DS)
+  saveRDS(fromHUC, "fromHUC.rds")
   rm(hucPoly)
+  rm(fromHUC)
+  
+  regions<-init_regions(WBDPath, regionsPath)
   
   options(expressions=50000)
   
@@ -87,8 +99,8 @@
     out <- bind_rows(out, subhucPoly@data[c("HUC12", "AREASQKM")])
   }
   sink()
-  hucArea <- dplyr::rename(hucArea, huc12 = HUC12, areasqkm = AREASQKM)
-  write.csv(hucPoly, "hucagg_area.csv", row.names = FALSE)
+  hucArea <- dplyr::rename(out, huc12 = HUC12, areasqkm = AREASQKM)
+  write.csv(hucArea, "hucagg_area.csv", row.names = FALSE)
   saveRDS(out, "huc_da.rds")
   saveRDS(aggrHUCs_out, "aggrHUCs.rds")
   
