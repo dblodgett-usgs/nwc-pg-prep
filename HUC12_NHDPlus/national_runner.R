@@ -3,7 +3,7 @@
   library(maptools)
   library(dplyr)
   # This script works with data from: https://www.epa.gov/waterdata/nhdplus-national-data
-  
+
   # Set this to where the files are.
   workingPath<-'/Users/dblodgett/Documents/Projects/WaterSmart/5_data/nwc-pg-prep/HUC12_NHDPlus/NHDPlusNationalData/'
   
@@ -22,7 +22,7 @@
   new_TOHUC <- readr::read_csv("updated_HU_12_DS.csv") %>%
     rename(HUC12 = HUC_12, new_TOHUC = HU_12_DS)
   # Pull in the whole dataset and save some stuff for downstream scripts.
-  hucPoly <- sf::st_read(WBDPath, layer = "HUC12") %>%
+  hucPoly <- sf::read_sf(WBDPath, layer = "HUC12") %>%
     sf::st_set_geometry(NULL) 
   
   hucArea <- hucPoly %>%
@@ -64,14 +64,18 @@
     for(subRegion in regions[region][[1]]) { # Mysterious errors occur when the scale is above a region at a time.
       print(paste('aggregating hucs for',subRegion))
       hucList<-getHUCList(subRegion,subhucPoly)
-      fromHUC<-sapply(as.character(unlist(hucList)),fromHUC_finder,hucs=subhucPoly@data$HUC12,tohucs=subhucPoly@data$TOHUC)
-      aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
-      aggrHUCs_out <- c(aggrHUCs_out, aggrHUCs)
-      subhucPoly<-unionHUCSet(aggrHUCs, fromHUC, subhucPoly)
-      print('simplifying hucs')
-      subhucPoly<-simplifyHucs(subhucPoly, simpTol = 1e-04)
+      if(length(hucList) > 0) {
+        fromHUC<-sapply(as.character(unlist(hucList)),fromHUC_finder,hucs=subhucPoly@data$HUC12,tohucs=subhucPoly@data$TOHUC)
+        aggrHUCs<-sapply(as.character(unlist(hucList)), HUC_aggregator, fromHUC=fromHUC)
+        aggrHUCs_out <- c(aggrHUCs_out, aggrHUCs)
+        subhucPoly<-unionHUCSet(aggrHUCs, fromHUC, subhucPoly)
+      }
     }
-    subhucPoly@data$UPHUCS<-paste(unlist(aggrHUCs[as.character(subhucPoly@data$HUC12)]),collapse=',')
+    print('simplifying hucs')
+    subhucPoly<-simplifyHucs(subhucPoly, simpTol = 1e-04)
+    subhucPoly@data$UPHUCS<-unlist(lapply(subhucPoly@data$HUC12, 
+                                          function(x) 
+                                            paste(unlist(aggrHUCs_out[as.character(x)]),collapse=',')))
     print('writing output')
     tryCatch(
       subhucPoly<-spChFIDs(subhucPoly,subhucPoly@data$HUC12),
@@ -89,6 +93,7 @@
         subhucPoly<-subhucPoly[-remove,]
         subhucPoly<-spChFIDs(subhucPoly,subhucPoly@data$HUC12)
       })
+    if(!file.exists(paste0(region,'_huc12agg.pgdump.gz'))) {
     print('writing output pgdump')
     proj4string(subhucPoly) <- CRS('+init=epsg:4269')
     layer_options = c("GEOMETRY_NAME=the_geom", "CREATE_TABLE=ON", "DROP_TABLE=OFF")
@@ -96,6 +101,7 @@
              layer = paste0(region,'_huc12agg'), driver = 'PGDUMP', layer_options = layer_options)
     system(paste0("perl -pi -e 's/OGC_FID/ogc_fid/g' ", region, "_huc12agg.pgdump"))
     system(paste0("gzip ", region, "_huc12agg.pgdump"))
+    }
     out <- bind_rows(out, subhucPoly@data[c("HUC12", "AREASQKM")])
   }
   sink()
