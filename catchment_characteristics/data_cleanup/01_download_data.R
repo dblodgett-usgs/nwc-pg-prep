@@ -1,8 +1,8 @@
 # Downloads all of the data below the item shown. One off, could be better.
 # Saves a bunch of zip files wherever it gets kicked off.
+setwd("raw_data/")
 library('sbtools')
 children <- item_list_children('5669a79ee4b08895842a1d47')
-urls<-sapply(children, function(child) child$title)
 for(item in children) {
   children_children <- item_list_children(item$id)
   for(child_item in children_children) {

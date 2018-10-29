@@ -9,3 +9,4 @@ catchment_characteristics/data_cleanup/zip
 catchment_characteristics/data_cleanup/rds/broken_out
 dumps
 HUC12_NHDPlus/NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb
+.Rproj.user

@@ -1,13 +1,12 @@
-# Reads in postedvar metadata table from Mike W.
+# Reads in metadata table from Mike W.
 # Cleans it up and writes it into a structured format.
 # Creates dataList.json for later.
 
 library("sbtools")
 library("stringr")
 library("jsonlite")
-setwd('~/temp')
 
-f<-file('postedvar_list.txt')
+f<-file('NHDPlusv2_Variable_MasterList.txt')
 inputText<-readLines(f)
 close(f)
 
@@ -34,26 +33,29 @@ themeURLs<-list(
 
 inputText<-cleanText(inputText)
 
-meta<-read.delim(text = inputText,stringsAsFactors = FALSE)
+meta <- read.delim(text = inputText, sep = "\t", stringsAsFactors = FALSE)
 
 dataList<-list()
 for(i in 1:nrow(meta)){
   item<-meta[i,]
   if(nchar(item$Theme)>0) {theme<-item$Theme}
-  if(nchar(item$Title)>0) {title<-item$Title}
-  if(nchar(item$ScienceBase.Item.URL)>0) {
-    sciBu<-item$ScienceBase.Item.URL
+  if(nchar(item$DESCRIPTION)>0) {title<-item$DESCRIPTION}
+  if(grepl("http", item$`Science.Base.Link`)) {
+    sciBu<-item$`Science.Base.Link`
     sb_id<-str_split(sciBu,"/")[[1]][6]}
   if(!sciBu %in% names(dataList)){
-    dataList[[sciBu]] <- list()
-    item_files<-item_list_files(sb_id)$fname
-    dataList[[sciBu]][["files"]]<-item_files
-    if(!length(item_files)>0) {
-      children<-item_list_children(sb_id)
-      dataList[[sciBu]][["files"]]<-c()
-      for(child in children) {
-        item_files<-item_list_files(child$id)$fname
-        dataList[[sciBu]][["files"]]<-c(dataList[[sciBu]][["files"]],item_files)
+    item_files <- NA
+    try(item_files<-item_list_files(sb_id)$fname)
+    if(!all(is.na(item_files))){
+      dataList[[sciBu]] <- list()
+      dataList[[sciBu]][["files"]]<-item_files
+      if(!length(item_files)>0) {
+        children<-item_list_children(sb_id)
+        dataList[[sciBu]][["files"]]<-c()
+        for(child in children) {
+          item_files<-item_list_files(child$id)$fname
+          dataList[[sciBu]][["files"]]<-c(dataList[[sciBu]][["files"]],item_files)
+        }
       }
     }
     dataList[[sciBu]][["vars"]]<-list(description=c(),
@@ -66,15 +68,15 @@ for(i in 1:nrow(meta)){
   dataList[[sciBu]][["themeURL"]]<-themeURLs[[theme]]
   dataList[[sciBu]][["title"]]<-title
   dataList[[sciBu]][["vars"]][["description"]]<-c(dataList[[sciBu]][["vars"]][["description"]],
-                                                  item$Description)
+                                                  item$DESCRIPTION)
   dataList[[sciBu]][["vars"]][["localCatch_name"]]<-c(dataList[[sciBu]][["vars"]][["localCatch_name"]],
-                                                      item$Catchment.Variable)
+                                                      item$`Catchment.Item.Name`)
   dataList[[sciBu]][["vars"]][["divRoute_name"]]<-c(dataList[[sciBu]][["vars"]][["divRoute_name"]],
-                                                    item$Divergence.Routed.Accumulation.Variable)
+                                                    item$`Divergence.Item.Name`)
   dataList[[sciBu]][["vars"]][["totRoute_name"]]<-c(dataList[[sciBu]][["vars"]][["totRoute_name"]],
-                                                    item$Total.Upstream.Accumulation.Variable)
+                                                    item$`Total.Upstream.Item Name`)
   dataList[[sciBu]][["vars"]][["units"]]<-c(dataList[[sciBu]][["vars"]][["units"]],
-                                            item$Units)
+                                            item$UNITS)
 }
 
 sink('dataList.json')
