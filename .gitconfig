@@ -1,2 +1,2 @@
 [lfs]
-   url = "https://cida.usgs.gov/artifactory/api/lfs/nwc-pg-prep"
+   url = "https://cidasdpdasartip.cr.usgs.gov:8444/artifactory/api/lfs/nwc-pg-prep/"
