@@ -7,7 +7,6 @@
 library("jsonlite")
 library("data.table")
 library("sbtools")
-setwd('~/temp')
 f<-file('dataList.json')
 dataList<-fromJSON(readLines(f))
 close(f)
@@ -15,6 +14,7 @@ rm(f)
 verified_items_files<-c()
 items_files<-list()
 for(item in names(dataList)) {
+  if(grepl("folder", item)) item <- stringr::str_replace(item, "folder", "item")
   # There are some variables that don't have accumulated data.
   if(any(grepl('N/A',dataList[item][[1]]$vars$divRoute_name))) {
     cat(paste('Missing accumulated Vars in',
@@ -66,7 +66,15 @@ for(item in names(dataList)) {
 
 missing<-which(!names(dataList) %in% verified_items_files)
 for(i in missing) {
-  cat(paste('File name patterns not found or understood for'), dataList[[i]]$title, 'with files', dataList[[i]]$files)
+  if(length(dataList[[i]]$files > 0)) {
+    cat(paste('Dataset:', 
+              dataList[[i]]$title, 
+              '\n with files:', 
+              paste(dataList[[i]]$files, collapse = ", "), "\n", 
+              "from url:", names(dataList[i]), "\n"))
+  } else {
+    cat(paste(names(dataList[i])), "\n")
+  }
 }
 
 for(item in names(items_files)) {

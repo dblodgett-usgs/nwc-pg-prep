@@ -41,8 +41,17 @@ for(i in 1:nrow(meta)){
   if(nchar(item$Theme)>0) {theme<-item$Theme}
   if(nchar(item$DESCRIPTION)>0) {title<-item$DESCRIPTION}
   if(grepl("http", item$`Science.Base.Link`)) {
+    
+    if(grepl("TOTalog", item$`Science.Base.Link`)) {
+      item$`Science.Base.Link` <- stringr::str_replace(item$`Science.Base.Link`, "TOTalog", "catalog")
+    }
+    if(grepl("ACCalog", item$`Science.Base.Link`)) {
+      item$`Science.Base.Link` <- stringr::str_replace(item$`Science.Base.Link`, "ACCalog", "catalog")
+    }
+    
     sciBu<-item$`Science.Base.Link`
     sb_id<-str_split(sciBu,"/")[[1]][6]}
+  
   if(!sciBu %in% names(dataList)){
     item_files <- NA
     try(item_files<-item_list_files(sb_id)$fname)
